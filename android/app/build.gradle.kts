@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.driveforwomen"
-        minSdk = flutter.minSdkVersion          // Firebase Auth phone OTP requires minSdk 23
+        minSdk = 23          // Firebase Auth + Google Maps minimum
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
