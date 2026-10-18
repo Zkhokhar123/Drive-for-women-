@@ -19,8 +19,8 @@ dependencies:
   url_launcher: ^6.3.1
   font_awesome_flutter: ^10.7.0
   geolocator: ^13.0.1
-  flutter_map: ^8.3.2
-  latlong2: ^0.10.1
+  google_maps_flutter: ^2.9.0
+  flutter_polyline_points: ^2.1.0
   image_picker: ^1.1.2
 
   # ── Firebase ────────────────────────────────────────────────
@@ -42,7 +42,6 @@ flutter:
   assets:
     - assets/images/
 
-# App icon = same cartoon girl logo as splash/login
 flutter_launcher_icons:
   android: true
   ios: true

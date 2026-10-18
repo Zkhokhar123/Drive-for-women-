@@ -1,46 +1,54 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../theme/app_theme.dart';
 
-/// Map camera helper — works with OpenStreetMap (no Google API key).
+/// Google Maps controller wrapper.
 class RideMapController {
-  final MapController _inner = MapController();
-
-  MapController get raw => _inner;
+  final Completer<GoogleMapController> _completer = Completer();
 
   Future<void> move(LatLng target, double zoom) async {
-    try {
-      _inner.move(target, zoom);
-    } catch (_) {}
+    final ctrl = await _completer.future;
+    ctrl.animateCamera(CameraUpdate.newCameraPosition(
+      CameraPosition(target: target, zoom: zoom),
+    ));
   }
 
   Future<void> fitPoints(List<LatLng> points, {double padding = 80}) async {
     if (points.isEmpty) return;
-    try {
-      if (points.length == 1) {
-        _inner.move(points.first, 15);
-        return;
-      }
-      final bounds = LatLngBounds.fromPoints(points);
-      _inner.fitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: EdgeInsets.all(padding),
-        ),
-      );
-    } catch (_) {
-      _inner.move(points.first, 14);
+    final ctrl = await _completer.future;
+    if (points.length == 1) {
+      ctrl.animateCamera(CameraUpdate.newLatLngZoom(points.first, 15));
+      return;
     }
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    ctrl.animateCamera(CameraUpdate.newLatLngBounds(
+      LatLngBounds(
+        southwest: LatLng(minLat - 0.002, minLng - 0.002),
+        northeast: LatLng(maxLat + 0.002, maxLng + 0.002),
+      ),
+      padding,
+    ));
   }
 
-  void dispose() {
-    _inner.dispose();
+  void onMapCreated(GoogleMapController controller) {
+    if (!_completer.isCompleted) _completer.complete(controller);
   }
+
+  void dispose() {}
 }
 
-/// Visible map tiles via CartoCDN / OSM — shows roads without Google billing.
-class RideMapView extends StatelessWidget {
+/// Google Maps widget — shows real roads, markers, polylines.
+class RideMapView extends StatefulWidget {
   final RideMapController controller;
   final LatLng center;
   final LatLng? pickup;
@@ -48,7 +56,7 @@ class RideMapView extends StatelessWidget {
   final LatLng? rider;
   final LatLng? driver;
   final bool driverIsBike;
-  final List<LatLng>? routePoints; // real road route from OSRM
+  final List<LatLng>? routePoints;
   final void Function(LatLng point)? onLongPress;
   final double initialZoom;
 
@@ -67,172 +75,120 @@ class RideMapView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final markers = <Marker>[];
-    final route = <LatLng>[];
-
-    if (routePoints != null && routePoints!.length >= 2) {
-      route.addAll(routePoints!);
-    } else if (driver != null && rider != null) {
-      route.addAll([driver!, rider!]);
-    } else if (pickup != null && drop != null) {
-      route.addAll([pickup!, drop!]);
-    } else if (driver != null && pickup != null) {
-      route.addAll([driver!, pickup!]);
-    }
-
-    if (rider != null) {
-      markers.add(
-        Marker(
-          point: rider!,
-          width: 52,
-          height: 52,
-          child: const _RiderDot(),
-        ),
-      );
-    }
-    if (pickup != null) {
-      final sameAsRider = rider != null &&
-          pickup!.latitude == rider!.latitude &&
-          pickup!.longitude == rider!.longitude;
-      if (!sameAsRider) {
-        markers.add(
-          Marker(
-            point: pickup!,
-            width: 40,
-            height: 40,
-            child: const Icon(Icons.location_on,
-                color: AppTheme.success, size: 36),
-          ),
-        );
-      }
-    }
-    if (drop != null) {
-      markers.add(
-        Marker(
-          point: drop!,
-          width: 40,
-          height: 40,
-          child: const Icon(Icons.location_on,
-              color: AppTheme.primary, size: 36),
-        ),
-      );
-    }
-    if (driver != null) {
-      markers.add(
-        Marker(
-          point: driver!,
-          width: 48,
-          height: 48,
-          child: _DriverPin(isBike: driverIsBike),
-        ),
-      );
-    }
-
-    return ColoredBox(
-      color: const Color(0xFFE8EEF2),
-      child: FlutterMap(
-        mapController: controller.raw,
-        options: MapOptions(
-          initialCenter: center,
-          initialZoom: initialZoom,
-          minZoom: 4,
-          maxZoom: 18,
-          onLongPress:
-              onLongPress == null ? null : (_, p) => onLongPress!(p),
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-          ),
-        ),
-        children: [
-          TileLayer(
-            urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c', 'd'],
-            userAgentPackageName: 'com.driveforwomen',
-            maxNativeZoom: 18,
-            keepBuffer: 2,
-            panBuffer: 1,
-            errorTileCallback: (tile, error, stack) {},
-          ),
-          if (route.length >= 2)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: route,
-                  color: AppTheme.primary.withValues(alpha: 0.9),
-                  strokeWidth: 4,
-                ),
-              ],
-            ),
-          MarkerLayer(markers: markers),
-        ],
-      ),
-    );
-  }
+  State<RideMapView> createState() => _RideMapViewState();
 }
 
-class _RiderDot extends StatelessWidget {
-  const _RiderDot();
-
+class _RideMapViewState extends State<RideMapView> {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF2196F3).withValues(alpha: 0.25),
-          ),
-        ),
-        Container(
-          width: 18,
-          height: 18,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF2196F3),
-            border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
+    final markers = <Marker>{};
+    final polylines = <Polyline>{};
 
-class _DriverPin extends StatelessWidget {
-  final bool isBike;
-  const _DriverPin({required this.isBike});
+    // Rider marker (blue dot)
+    if (widget.rider != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('rider'),
+        position: widget.rider!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: const InfoWindow(title: 'You'),
+      ));
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
+    // Pickup marker (green)
+    if (widget.pickup != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('pickup'),
+        position: widget.pickup!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: const InfoWindow(title: 'Pickup'),
+      ));
+    }
+
+    // Drop marker (pink/rose)
+    if (widget.drop != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('drop'),
+        position: widget.drop!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+        infoWindow: const InfoWindow(title: 'Destination'),
+      ));
+    }
+
+    // Driver marker (violet)
+    if (widget.driver != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('driver'),
+        position: widget.driver!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+        infoWindow: InfoWindow(
+          title: widget.driverIsBike ? 'Driver (Bike)' : 'Driver (Car)',
+        ),
+      ));
+    }
+
+    // Route polyline
+    final routePts = widget.routePoints;
+    if (routePts != null && routePts.length >= 2) {
+      polylines.add(Polyline(
+        polylineId: const PolylineId('route'),
+        points: routePts,
         color: AppTheme.primary,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        width: 5,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        jointType: JointType.round,
+      ));
+    } else if (widget.driver != null && widget.rider != null) {
+      polylines.add(Polyline(
+        polylineId: const PolylineId('route'),
+        points: [widget.driver!, widget.rider!],
+        color: AppTheme.primary,
+        width: 4,
+        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+      ));
+    } else if (widget.pickup != null && widget.drop != null) {
+      polylines.add(Polyline(
+        polylineId: const PolylineId('route'),
+        points: [widget.pickup!, widget.drop!],
+        color: AppTheme.primary,
+        width: 4,
+        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+      ));
+    }
+
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: widget.center,
+        zoom: widget.initialZoom,
       ),
-      child: Icon(
-        isBike ? Icons.motorcycle_rounded : Icons.local_taxi_rounded,
-        color: Colors.white,
-        size: 22,
-      ),
+      onMapCreated: widget.controller.onMapCreated,
+      markers: markers,
+      polylines: polylines,
+      myLocationEnabled: true,
+      myLocationButtonEnabled: false,
+      zoomControlsEnabled: false,
+      compassEnabled: false,
+      mapToolbarEnabled: false,
+      onLongPress: widget.onLongPress,
+      mapType: MapType.normal,
+      style: _darkMapStyle,
     );
   }
 }
+
+// Dark map style JSON for Google Maps
+const String _darkMapStyle = '''
+[
+  {"elementType": "geometry", "stylers": [{"color": "#1a1a2e"}]},
+  {"elementType": "labels.text.fill", "stylers": [{"color": "#8888aa"}]},
+  {"elementType": "labels.text.stroke", "stylers": [{"color": "#1a1a2e"}]},
+  {"featureType": "road", "elementType": "geometry", "stylers": [{"color": "#222238"}]},
+  {"featureType": "road.arterial", "elementType": "geometry", "stylers": [{"color": "#2d2d4a"}]},
+  {"featureType": "road.highway", "elementType": "geometry", "stylers": [{"color": "#3d3d5c"}]},
+  {"featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [{"color": "#e91e8c", "weight": 0.5}]},
+  {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#0d0d1a"}]},
+  {"featureType": "poi", "stylers": [{"visibility": "off"}]},
+  {"featureType": "transit", "stylers": [{"visibility": "off"}]},
+  {"featureType": "administrative", "elementType": "geometry.stroke", "stylers": [{"color": "#333355"}]}
+]
+''';
