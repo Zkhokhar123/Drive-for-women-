@@ -290,6 +290,18 @@ class UserSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update driver stats after a ride completes — called from RideService.
+  void updateDriverStats({
+    required double dailyEarnings,
+    required double driverBalance,
+    required int    ridesCompleted,
+  }) {
+    this.dailyEarnings  = dailyEarnings;
+    this.driverBalance  = driverBalance;
+    this.ridesCompleted = ridesCompleted;
+    notifyListeners();
+  }
+
   void addCompletedRide({
     required String route,
     required String driverName,
@@ -397,35 +409,4 @@ class UserSession extends ChangeNotifier {
     weeklyEarnings[todayIdx] = dailyEarnings;
   }
 
-  void _seedDriverData() {
-    driverEarningsHistory = [
-      {'route': 'Gulshan → Clifton',      'fare': 280, 'date': 'Today · 3:20 PM',     'rideType': 'bike'},
-      {'route': 'Bahadurabad → Saddar',   'fare': 480, 'date': 'Today · 12:15 PM',    'rideType': 'car'},
-      {'route': 'DHA Phase 6 → Korangi',  'fare': 320, 'date': 'Yesterday · 9:00 AM', 'rideType': 'bike'},
-      {'route': 'North Nazimabad → Malir','fare': 170, 'date': 'Yesterday · 6:45 PM', 'rideType': 'bike'},
-    ];
-    weeklyEarnings = [1200, 1850, 980, 2200, dailyEarnings, 750, 400];
-  }
-
-  void _seedRideHistory() {
-    rideHistory = [
-      {'type':'bike','icon':Icons.motorcycle_rounded,'route':'Gulshan-e-Iqbal → Clifton',
-       'date':'May 28, 2024 · 3:20 PM','driver':'Sana K.','status':'Completed','fare':'280'},
-      {'type':'car','icon':Icons.local_taxi_rounded,'route':'Bahadurabad → Saddar',
-       'date':'May 27, 2024 · 12:15 PM','driver':'Hira K.','status':'Completed','fare':'960'},
-      {'type':'car','icon':Icons.local_taxi_rounded,'route':'DHA Phase 6 → Korangi',
-       'date':'May 26, 2024 · 9:00 AM','driver':'Fatima R.','status':'Completed','fare':'750'},
-      {'type':'bike','icon':Icons.motorcycle_rounded,'route':'North Nazimabad → Malir',
-       'date':'May 25, 2024 · 6:45 PM','driver':'Unknown','status':'Cancelled','fare':'0'},
-    ];
-  }
-
-  void _seedWalletTransactions() {
-    walletTransactions = [
-      {'title':'Bike Ride – Clifton','date':'May 28, 2024 · 3:45 PM','amount':'- PKR 280','type':'debit'},
-      {'title':'Added via JazzCash','date':'May 27, 2024 · 10:00 AM','amount':'+ PKR 500','type':'credit'},
-      {'title':'Car Ride – Saddar','date':'May 27, 2024 · 1:00 PM','amount':'- PKR 960','type':'debit'},
-      {'title':'Referral Bonus','date':'May 26, 2024 · 11:30 AM','amount':'+ PKR 100','type':'credit'},
-    ];
-  }
 }

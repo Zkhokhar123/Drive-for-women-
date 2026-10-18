@@ -262,10 +262,11 @@ class RideService {
         rideType: rideType,
       );
       if (session.uid == driverId) {
-        session.dailyEarnings = daily;
-        session.driverBalance = bal;
-        session.ridesCompleted = rides;
-        session.notifyListeners();
+        session.updateDriverStats(
+          dailyEarnings:  daily,
+          driverBalance:  bal,
+          ridesCompleted: rides,
+        );
       }
     }
   }
