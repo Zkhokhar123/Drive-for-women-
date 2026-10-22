@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+﻿import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.driveforwomen"
-        minSdk = 23          // Firebase Auth + Google Maps minimum
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,7 +41,7 @@ flutter {
 }
 
 dependencies {
-    // Core library desugaring — needed for Java 8+ APIs on older Android
+    // Core library desugaring â€” needed for Java 8+ APIs on older Android
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
