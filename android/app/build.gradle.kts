@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.driveforwomen"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.driveforwomen"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,7 +41,7 @@ flutter {
 }
 
 dependencies {
-    // Core library desugaring â€” needed for Java 8+ APIs on older Android
+    // Core library desugaring Ã¢â‚¬â€ needed for Java 8+ APIs on older Android
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 

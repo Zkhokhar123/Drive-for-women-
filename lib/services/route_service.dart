@@ -1,15 +1,15 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
-/// Google Directions API — real road routes.
+/// Google Directions API â€” real road routes.
 /// Falls back to straight line if API fails.
 class RouteService {
   RouteService._();
   static final RouteService instance = RouteService._();
 
-  static const _apiKey = 'AIzaSyBSBfH0HAJzItY_EtJRkN9M5e-EJODrvc0';
+  static const _apiKey = 'AIzaSyA_SDOzgQJshq7dLqWyR47Yhi4ZOBEst4s';
 
   /// Returns decoded polyline points along real roads.
   Future<List<LatLng>> fetchRoute(LatLng from, LatLng to) async {
@@ -115,7 +115,7 @@ class RouteService {
     }
   }
 
-  // ── Private helpers ─────────────────────────────────────────
+  // â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   List<LatLng> _decodePolyline(String encoded) {
     final List<LatLng> points = [];

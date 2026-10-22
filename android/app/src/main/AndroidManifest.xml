@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -15,7 +15,7 @@
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBSBfH0HAJzItY_EtJRkN9M5e-EJODrvc0"/>
+            android:value="AIzaSyA_SDOzgQJshq7dLqWyR47Yhi4ZOBEst4s"/>
 
         <activity
             android:name=".MainActivity"

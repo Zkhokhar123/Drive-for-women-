@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,7 +25,7 @@ class PlaceSearchService {
   PlaceSearchService._();
   static final PlaceSearchService instance = PlaceSearchService._();
 
-  static const _apiKey = 'AIzaSyBSBfH0HAJzItY_EtJRkN9M5e-EJODrvc0';
+  static const _apiKey = 'AIzaSyA_SDOzgQJshq7dLqWyR47Yhi4ZOBEst4s';
   // Karachi center bias
   static const _locationBias = '24.8607,67.0011';
   static const _radius = '50000';
